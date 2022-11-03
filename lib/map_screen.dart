@@ -5,6 +5,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:golf_map/main.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:uuid/uuid.dart';
+
+const uuid = Uuid();
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
@@ -43,6 +46,7 @@ class _MapScreenState extends State<MapScreen> {
         polylines: Set.of(_polylines.values),
         markers: Set.of(_allMarkers),
         onTap: (latLng) {
+          print("SET MARKER");
           _setMarker(latLng);
         },
       ),
@@ -71,8 +75,7 @@ class _MapScreenState extends State<MapScreen> {
 
   void _calculatePolylineWithTwoMarkers() {
     if (_markers.length == 2) {
-      final String polylineIdVal =
-          DateTime.now().millisecondsSinceEpoch.toString();
+      final String polylineIdVal = uuid.v4();
       final PolylineId polylineId = PolylineId(polylineIdVal);
 
       final Polyline polyline = Polyline(
@@ -88,8 +91,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _calculatePolylineWithMultipleMarkers() {
-    final String polylineIdVal =
-        DateTime.now().millisecondsSinceEpoch.toString();
+    final String polylineIdVal = uuid.v4();
     final PolylineId polylineId = PolylineId(polylineIdVal);
 
     final Polyline polyline = Polyline(
@@ -105,8 +107,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _calculatePolylineWithMultipleMarkersAndDistance() {
-    final String polylineIdVal =
-        DateTime.now().millisecondsSinceEpoch.toString();
+    final String polylineIdVal = uuid.v4();
     final PolylineId polylineId = PolylineId(polylineIdVal);
 
     final Polyline polyline = Polyline(
@@ -114,7 +115,7 @@ class _MapScreenState extends State<MapScreen> {
       consumeTapEvents: true,
       color: Colors.orange,
       width: 2,
-      points: _allMarkers.map((marker) => marker.position).toList(),
+      points: _markers.map((marker) => marker.position).toList(),
     );
 
     _polylines.clear();
@@ -124,7 +125,7 @@ class _MapScreenState extends State<MapScreen> {
   void _setMarker(LatLng latLng) async {
     setState(() {
       final Marker marker = Marker(
-        markerId: MarkerId(DateTime.now().millisecondsSinceEpoch.toString()),
+        markerId: MarkerId(uuid.v4()),
         position: latLng,
       );
 
@@ -172,7 +173,7 @@ class _MapScreenState extends State<MapScreen> {
     final y = (firstPoint.longitude + secondPoint.longitude) / 2;
 
     return Marker(
-        markerId: MarkerId(DateTime.now().millisecondsSinceEpoch.toString()),
+        markerId: MarkerId(uuid.v4()),
         position: LatLng(x, y),
         alpha: 0.5);
   }
@@ -198,7 +199,7 @@ class _MapScreenState extends State<MapScreen> {
 
     for(var i = 0;i < _markers.length ; i ++ ){
       _allMarkers.add(_markers[i]);
-      if(i < _middlePoints.length && _markers.length > 2 ){
+      if(i < _middlePoints.length && _markers.length >= 2 && _middlePoints.isNotEmpty){
         _allMarkers.add(_middlePoints[i]);
       }
     }
