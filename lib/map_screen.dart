@@ -31,6 +31,7 @@ class _MapScreenState extends State<MapScreen> {
   final List<Marker> _markers = <Marker>[];
   final List<Marker> _middlePoints = <Marker>[];
   final List<Marker> _allMarkers = <Marker>[];
+  final List<Marker> _otherMarkers = <Marker>[];
 
   Map<PolylineId, Polyline> _polylines = <PolylineId, Polyline>{};
 
@@ -45,6 +46,10 @@ class _MapScreenState extends State<MapScreen> {
         },
         polylines: Set.of(_polylines.values),
         markers: Set.of(_allMarkers),
+        onLongPress: (latlng){
+          print("SET OTHER MARKER");
+          _setOtherMarker(latlng);
+        },
         onTap: (latLng) {
           print("SET MARKER");
           _setMarker(latLng);
@@ -193,15 +198,27 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  void _setOtherMarker(LatLng latLng){
+    setState(() {
+      final Marker marker = Marker(
+        markerId: MarkerId(uuid.v4()),
+        position: latLng,
+      );
+
+      _otherMarkers.add(marker);
+
+      _generateAllMarkers();
+
+    });
+  }
+
   void _generateAllMarkers(){
 
     _allMarkers.clear();
 
-    for(var i = 0;i < _markers.length ; i ++ ){
-      _allMarkers.add(_markers[i]);
-      if(i < _middlePoints.length && _markers.length >= 2 && _middlePoints.isNotEmpty){
-        _allMarkers.add(_middlePoints[i]);
-      }
-    }
+    _allMarkers.addAll(_markers);
+    _allMarkers.addAll(_middlePoints);
+    _allMarkers.addAll(_otherMarkers);
+
   }
 }
