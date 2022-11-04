@@ -118,26 +118,26 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _setMarker(LatLng latLng) async {
-    setState(() {
-      final Marker marker = Marker(
-        markerId: MarkerId(uuid.v4()),
-        position: latLng,
-      );
+    final Marker marker = Marker(
+      markerId: MarkerId(uuid.v4()),
+      position: latLng,
+    );
 
-      if (_markers.length >= 2) {
-        _markers.insert(_markers.length - 1, marker);
-      } else {
-        _markers.add(marker);
-      }
+    if (_markers.length >= 2) {
+      _markers.insert(_markers.length - 1, marker);
+    } else {
+      _markers.add(marker);
+    }
 
-      _calculateAllMiddlePoints();
+    await _calculateAllMiddlePoints();
 
-      _setPolylinesPoints(_markers);
+    _setPolylinesPoints(_markers);
 
-      _generateAllMarkers();
+    _generateAllMarkers();
 
-      _calculatePolylineWithMultipleMarkersAndDistance();
-    });
+    _calculatePolylineWithMultipleMarkersAndDistance();
+
+    setState(() {});
   }
 
   Future<void> _goToTheLake() async {
@@ -145,7 +145,7 @@ class _MapScreenState extends State<MapScreen> {
     controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
   }
 
-  void _calculateDistanceInMeters(LatLng firstPoint, LatLng secondPoint) async {
+  int _calculateDistanceInMeters(LatLng firstPoint, LatLng secondPoint) {
     final latOrigin = firstPoint.latitude;
     final lngOrigin = firstPoint.longitude;
     final latDestination = secondPoint.latitude;
@@ -161,26 +161,32 @@ class _MapScreenState extends State<MapScreen> {
 
     final km = 12742 * asin(sqrt(a));
     final meters = (km * 1000).round();
-    print(meters);
+    return meters;
   }
 
-  Marker _addMarkerBetweenTwoPoints(LatLng firstPoint, LatLng secondPoint) {
+  LatLng _getPositionBetweenTwoPoints(LatLng firstPoint, LatLng secondPoint) {
     final x = (firstPoint.latitude + secondPoint.latitude) / 2;
     final y = (firstPoint.longitude + secondPoint.longitude) / 2;
 
-    return Marker(
-        markerId: MarkerId(uuid.v4()), position: LatLng(x, y), alpha: 0.5);
+    return LatLng(x, y);
   }
 
-  void _calculateAllMiddlePoints() {
+  Future<void> _calculateAllMiddlePoints() async {
     _middlePoints.clear();
 
     for (var i = 0; i < _markers.length - 1; i++) {
       final currentMarker = _markers[i];
       final nextMarker = _markers[i + 1];
 
-      final middleMarker = _addMarkerBetweenTwoPoints(
+      final distanceBetween = _calculateDistanceInMeters(
           currentMarker.position, nextMarker.position);
+
+      final middleMarker = await customLabelMarker(LabelMarker(
+        label: "${distanceBetween}m",
+        markerId: MarkerId(uuid.v4()),
+        position: _getPositionBetweenTwoPoints(
+            currentMarker.position, nextMarker.position),
+      ));
 
       _middlePoints.add(middleMarker);
     }
