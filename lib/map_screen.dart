@@ -20,8 +20,6 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   final Completer<GoogleMapController> _controller = Completer();
 
-  final GlobalKey globalKey = GlobalKey();
-
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.42796133580664, -122.085749655962),
     zoom: 14.4746,
@@ -118,9 +116,27 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _setMarker(LatLng latLng) async {
+    final markerId = MarkerId(uuid.v4());
     final Marker marker = Marker(
-      markerId: MarkerId(uuid.v4()),
+      markerId: markerId,
       position: latLng,
+      draggable: true,
+      onDrag: (latLng) async {
+        print("DRAG");
+
+        //_updatePoints(latLng);
+        _updateMarkerPosition(markerId,latLng);
+
+        await _calculateAllMiddlePoints();
+
+        _setPolylinesPoints(_markers);
+
+        _calculatePolylineWithMultipleMarkersAndDistance();
+
+        setState(() {
+
+        });
+      }
     );
 
     if (_markers.length >= 2) {
@@ -143,6 +159,29 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _goToTheLake() async {
     final GoogleMapController controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
+  }
+
+  void _updatePoints(LatLng latLng){
+    _polylinePoints.removeWhere((point) => point.latitude != latLng.latitude);
+    _polylinePoints.add(latLng);
+  }
+
+  void _updateMarkerPosition(MarkerId markerId,LatLng latLng){
+
+    final newMarkers =  _markers.map((marker){
+
+      if(marker.markerId.value != markerId.value){
+        return marker;
+      }
+
+      return marker.copyWith(positionParam: latLng);
+
+    });
+
+    _markers.clear();
+    _markers.addAll(newMarkers);
+
+    print(newMarkers.length);
   }
 
   int _calculateDistanceInMeters(LatLng firstPoint, LatLng secondPoint) {
