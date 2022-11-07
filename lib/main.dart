@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:golf_map/home.dart';
 import 'package:golf_map/map_screen.dart';
 
 const APIKEY = "AIzaSyCO_JRTB21jGlIucW1hFyteghAYdCnzUEE";
@@ -18,7 +19,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MapScreen(),
+      home: const HomeScreen(),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:custom_marker/marker_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:golf_map/label_marker_custom.dart';
+import 'package:golf_map/maps_cubit/maps_cubit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -37,10 +38,11 @@ class _MapScreenState extends State<MapScreen> {
 
   final List<LatLng> _polylinePoints = <LatLng>[];
 
-  Map<PolylineId, Polyline> _polylines = <PolylineId, Polyline>{};
+  final Map<PolylineId, Polyline> _polylines = <PolylineId, Polyline>{};
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
         body: GoogleMap(
       mapType: MapType.terrain,
@@ -50,6 +52,7 @@ class _MapScreenState extends State<MapScreen> {
       },
       polylines: Set.of(_polylines.values),
       markers: Set.of(_allMarkers),
+
       onLongPress: (latlng) {
         print("SET OTHER MARKER");
         //_setOtherMarker(latlng);
@@ -64,39 +67,6 @@ class _MapScreenState extends State<MapScreen> {
 
   LatLng _createLatLng(double lat, double lng) {
     return LatLng(lat, lng);
-  }
-
-  void _calculatePolylineWithTwoMarkers() {
-    if (_markers.length == 2) {
-      final String polylineIdVal = uuid.v4();
-      final PolylineId polylineId = PolylineId(polylineIdVal);
-
-      final Polyline polyline = Polyline(
-        polylineId: polylineId,
-        consumeTapEvents: true,
-        color: Colors.orange,
-        width: 5,
-        points: [_markers.first.position, _markers.last.position],
-      );
-
-      _polylines[polylineId] = polyline;
-    }
-  }
-
-  void _calculatePolylineWithMultipleMarkers() {
-    final String polylineIdVal = uuid.v4();
-    final PolylineId polylineId = PolylineId(polylineIdVal);
-
-    final Polyline polyline = Polyline(
-      polylineId: polylineId,
-      consumeTapEvents: true,
-      color: Colors.orange,
-      geodesic: true,
-      width: 2,
-      points: _markers.map((marker) => marker.position).toList(),
-    );
-
-    _polylines[polylineId] = polyline;
   }
 
   void _calculatePolylineWithMultipleMarkersAndDistance() {
@@ -131,7 +101,10 @@ class _MapScreenState extends State<MapScreen> {
 
         _setPolylinesPoints(_markers);
 
+        _generateAllMarkers();
+
         _calculatePolylineWithMultipleMarkersAndDistance();
+
 
         setState(() {
 
@@ -168,20 +141,11 @@ class _MapScreenState extends State<MapScreen> {
 
   void _updateMarkerPosition(MarkerId markerId,LatLng latLng){
 
-    final newMarkers =  _markers.map((marker){
+    final indexOfMarker = _markers.indexWhere((m) => m.markerId == markerId);
 
-      if(marker.markerId.value != markerId.value){
-        return marker;
-      }
+    final oldMarker = _markers[indexOfMarker];
+    _markers[indexOfMarker] = oldMarker.copyWith(positionParam: latLng);
 
-      return marker.copyWith(positionParam: latLng);
-
-    });
-
-    _markers.clear();
-    _markers.addAll(newMarkers);
-
-    print(newMarkers.length);
   }
 
   int _calculateDistanceInMeters(LatLng firstPoint, LatLng secondPoint) {
@@ -219,6 +183,11 @@ class _MapScreenState extends State<MapScreen> {
 
       final distanceBetween = _calculateDistanceInMeters(
           currentMarker.position, nextMarker.position);
+
+/*
+      final middleMarker = Marker(markerId: MarkerId(uuid.v4()),position: _getPositionBetweenTwoPoints(
+          currentMarker.position, nextMarker.position),);
+*/
 
       final middleMarker = await customLabelMarker(LabelMarker(
         label: "${distanceBetween}m",

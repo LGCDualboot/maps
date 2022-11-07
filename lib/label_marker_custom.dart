@@ -33,8 +33,13 @@ Future<Marker> customLabelMarker(LabelMarker labelMarker) async {
 }
 
 Future<BitmapDescriptor> createCustomMarkerBitmap(String title,
-    {required TextStyle textStyle,
-      Color backgroundColor = Colors.transparent}) async {
+    {TextStyle textStyle = const TextStyle(
+      fontSize: 27.0,
+      color: Colors.black,
+      letterSpacing: 1.0,
+      fontFamily: 'Roboto Bold',
+    ),
+      Color backgroundColor = Colors.white}) async {
   TextSpan span = TextSpan(
     style: textStyle,
     text: title,
