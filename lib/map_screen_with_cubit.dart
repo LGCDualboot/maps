@@ -28,6 +28,8 @@ class MapScreenWithCubit extends StatelessWidget {
         mapType: state.mapType,
         polylines: Set.of(state.polylines.values),
         markers: Set.of(state.allMarkers),
+        polygons: Set.of(state.polygons),
+        circles: Set.of(state.circles),
       ),
     );
   }

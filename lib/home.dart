@@ -23,11 +23,10 @@ class HomeScreen extends StatelessWidget {
                 create: (BuildContext context) {
                   final cubit = MapsCubit();
 
-                  var lat1 = 33.48218513403903;
-                  var lng1 = -117.72088516319099;
-
-                  var lat2 = 33.48028594020149;
-                  var lng2 = -117.71801646379252;
+                  var lat1 = 33.480715288538754;
+                  var lng1 = -117.71760451900788;
+                  var lat2 = 33.48324275547921;
+                  var lng2 = -117.71859724288942;
 
                   var dLon = lng2 - lng1;
                   var y = sin(dLon) * cos(lat2);
@@ -48,40 +47,51 @@ class HomeScreen extends StatelessWidget {
                   final Marker marker2 = Marker(
                       markerId: MarkerId("2"), position: LatLng(lat2, lng2));
 
+                  cubit.setPolygon(
+                      "-117.71881198395164 33.483611838817644,-117.71820263022305 33.481598217509216,-117.71760449761273 33.48072125755369",
+                      PolygonType.centralPath);
+
                   cubit.setInitialCameraPosition(initialCameraPosition);
                   cubit.addMarker(marker1);
                   cubit.addMarker(marker2);
 
-                  cubit.setCacheOfMiddlePointsLabels(marker1.position, marker2.position);
+                  cubit.setCacheOfMiddlePointsLabels(
+                      marker1.position, marker2.position);
 
+                  cubit.setOnlyOneCircle(cubit.getPositionBetweenTwoPoints(
+                      marker1.position, marker2.position));
 
                   final middleMarker = Marker(
                       markerId: MarkerId("middleMarker"),
                       position: cubit.getPositionBetweenTwoPoints(
                           marker1.position, marker2.position),
-                  draggable: true,
-                    onDrag: (latLng) {
-                        cubit.updateMarkerPosition(MarkerId("middleMarker"), latLng);
+                      draggable: true,
+                      onDrag: (latLng) {
+                        cubit.updateMarkerPosition(
+                            MarkerId("middleMarker"), latLng);
+                        cubit.setOnlyOneCircle(latLng);
 
-                        cubit.setPolylinePoints(cubit.state.markers.map((m) => m.position).toList());
+                        cubit.setPolylinePoints(cubit.state.markers
+                            .map((m) => m.position)
+                            .toList());
                         cubit.calculatePolylines();
 
-                        cubit.calculateAllMiddlePointsBetweenMarkers().then((value){
+                        cubit
+                            .calculateAllMiddlePointsBetweenMarkers()
+                            .then((value) {
                           cubit.generateAllMarkers();
                           cubit.drawMap();
                         });
-
-                    }
-                  );
+                      });
 
                   cubit.addMarkerBeforeLastOne(middleMarker);
 
-                  cubit.setPolylinePoints(cubit.state.markers.map((m) => m.position).toList());
+                  cubit.setPolylinePoints(
+                      cubit.state.markers.map((m) => m.position).toList());
 
                   cubit.calculatePolylines();
 
                   cubit.generateAllMarkers();
-
 
                   return cubit;
                 },

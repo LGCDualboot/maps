@@ -11,9 +11,10 @@ part 'maps_state.dart';
 
 const uuid = Uuid();
 
-class MapsCubit extends Cubit<MapsState> {
+enum PolygonType { water, teebox, bunker, fairway, centralPath }
 
-  final Map<String,BitmapDescriptor> _cacheMiddlePoints = {};
+class MapsCubit extends Cubit<MapsState> {
+  final Map<String, BitmapDescriptor> _cacheMiddlePoints = {};
 
   MapsCubit() : super(MapsState.empty());
 
@@ -78,20 +79,17 @@ class MapsCubit extends Cubit<MapsState> {
 
       BitmapDescriptor? icon = _cacheMiddlePoints["${distanceBetween}m"];
 
-      if(icon == null){
-        icon = await createCustomMarkerBitmap(
-            "${distanceBetween}m"
-        );
+      if (icon == null) {
+        icon = await createCustomMarkerBitmap("${distanceBetween}m");
 
         _cacheMiddlePoints["${distanceBetween}m"] = icon;
       }
 
       final middleMarker = Marker(
-        markerId: MarkerId("${distanceBetween}m"),
-        position: getPositionBetweenTwoPoints(
-            currentMarker.position, nextMarker.position),
-        icon: icon
-      );
+          markerId: MarkerId("${distanceBetween}m"),
+          position: getPositionBetweenTwoPoints(
+              currentMarker.position, nextMarker.position),
+          icon: icon);
 
       middlePoints.add(middleMarker);
     }
@@ -129,9 +127,16 @@ class MapsCubit extends Cubit<MapsState> {
     emit(state.copyWith(otherMarkers: state.otherMarkers..add(marker)));
   }
 
+  void setOnlyOneCircle(LatLng position) {
+    emit(state.copyWith(
+        circles: [Circle(circleId: CircleId(uuid.v4()),
+          center: position,
+          radius: 10,
+          strokeWidth: 1
+        )]));
+  }
 
-  void generateAllMarkers(){
-
+  void generateAllMarkers() {
     final allMarkers = <Marker>[
       ...state.markers,
       ...state.middlePoints,
@@ -141,37 +146,89 @@ class MapsCubit extends Cubit<MapsState> {
     emit(state.copyWith(allMarkers: allMarkers));
   }
 
-  void updateMarkerPosition(MarkerId markerId,LatLng latLng){
-
-    final indexOfMarker = state.markers.indexWhere((m) => m.markerId == markerId);
+  void updateMarkerPosition(MarkerId markerId, LatLng latLng) {
+    final indexOfMarker =
+        state.markers.indexWhere((m) => m.markerId == markerId);
 
     final oldMarker = state.markers[indexOfMarker];
     final markers = state.markers;
     markers[indexOfMarker] = oldMarker.copyWith(positionParam: latLng);
     emit(state.copyWith(markers: markers));
-
   }
 
-  void drawMap(){
-    if(state.controller == null){
+  void updateCirclePosition(CircleId circleId, LatLng latLng){
+    final indexOfCircle = state.circles.indexWhere((c) => c.circleId == circleId);
+
+    final oldCircle = state.circles[indexOfCircle];
+    final circles = state.circles;
+
+    circles[indexOfCircle] = oldCircle.copyWith(centerParam: latLng);
+    emit(state.copyWith(circles: circles));
+  }
+
+  void setPolygon(String latLngList, PolygonType polygonType,
+      {int strokeWidth = 2}) {
+    Color strokeColor, fillColor;
+
+    switch (polygonType) {
+      case PolygonType.water:
+        strokeColor = Colors.blue.withOpacity(0.2);
+        fillColor = Colors.blue.withOpacity(0.2);
+        break;
+      case PolygonType.teebox:
+        strokeColor = Colors.black;
+        fillColor = Colors.transparent;
+        break;
+      case PolygonType.bunker:
+        strokeColor = Colors.yellowAccent;
+        fillColor = Colors.brown;
+        break;
+      case PolygonType.fairway:
+      case PolygonType.centralPath:
+        strokeColor = Colors.green;
+        fillColor = Colors.green.withOpacity(0.2);
+        break;
+    }
+
+    Polygon polygon = Polygon(
+        polygonId: PolygonId(uuid.v4()),
+        strokeColor: strokeColor,
+        fillColor: fillColor,
+        strokeWidth: strokeWidth,
+        points: parseLatLng(latLngList));
+
+    emit(state.copyWith(polygons: state.polygons..add(polygon)));
+  }
+
+  void drawMap() {
+    if (state.controller == null) {
       throw Exception("GoogleMapController is required to draw the map");
     }
 
-    if(state.initialCameraPosition == null){
+    if (state.initialCameraPosition == null) {
       throw Exception("InitialCameraPosition is required to draw the map");
     }
 
     emit(state.copyWith(idToDraw: uuid.v4()));
   }
 
-  Future<void> setCacheOfMiddlePointsLabels(LatLng point1, LatLng point2) async {
+  Future<void> setCacheOfMiddlePointsLabels(
+      LatLng point1, LatLng point2) async {
     final meters = calculateDistanceInMeters(point1, point2);
 
     for (var i = 0; i < meters; i++) {
-      _cacheMiddlePoints["${i}m"] = await createCustomMarkerBitmap(
-        "${i}m"
-      );
+      _cacheMiddlePoints["${i}m"] = await createCustomMarkerBitmap("${i}m");
+    }
+  }
+
+  List<LatLng> parseLatLng(String points) {
+    List<LatLng> toReturn = [];
+    var latlng = points.split(',');
+    for (var element in latlng) {
+      var aux = element.split(' ');
+      toReturn.add(LatLng(double.parse(aux[1]), double.parse(aux[0])));
     }
 
+    return toReturn;
   }
 }
